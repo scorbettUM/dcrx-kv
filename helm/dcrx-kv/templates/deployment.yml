@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-dcrx-kv"
+  labels:
+    app: "{{ .Release.Name }}-dcrx-kv"
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: "{{ .Release.Name }}-dcrx-kv"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-dcrx-kv"
+    spec:
+      containers:
+      - name: dcrx-kv
+        image: "adalundhe/dcrx-kv:{{ .Values.image.tag }}"
+        ports:
+        - containerPort: 2278
+        env:
+        - name: DCRX_BOOT_WAIT
+          valueFrom:
+            configMapKeyRef:
+              name: "{{ .Release.Name }}-env"
+              key: DCRX_BOOT_WAIT
+        - name: DCRX_KV_MAX_MEMORY_PERCENT_USAGE
+          valueFrom:
+            configMapKeyRef:
+              name: "{{ .Release.Name }}-env"
+              key: DCRX_KV_MAX_MEMORY_PERCENT_USAGE
+        - name: DCRX_KV_JOB_PRUNE_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: "{{ .Release.Name }}-env"
+              key: DCRX_KV_JOB_PRUNE_INTERVAL
+        - name: DCRX_KV_JOB_MAX_AGE
+          valueFrom:
+            configMapKeyRef:
+              name: "{{ .Release.Name }}-env"
+              key: DCRX_KV_JOB_MAX_AGE
+        - name: DCRX_KV_JOB_POOL_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: "{{ .Release.Name }}-env"
+              key: DCRX_KV_JOB_POOL_SIZE
+        - name: DCRX_KV_JOB_WORKERS
+          valueFrom:
+            configMapKeyRef:
+              name: "{{ .Release.Name }}-env"
+              key: DCRX_KV_JOB_WORKERS
+        - name: DCRX_KV_TOKEN_EXPIRATION
+          valueFrom:
+            configMapKeyRef:
+              name: "{{ .Release.Name }}-env"
+              key: DCRX_KV_TOKEN_EXPIRATION
+        - name: DCRX_KV_DATABASE_TYPE
+          valueFrom:
+            configMapKeyRef:
+              name: "{{ .Release.Name }}-env"
+              key: DCRX_KV_DATABASE_TYPE
+        - name: DCRX_KV_DATABASE_URI
+          value: "{{ .Release.Name }}-postgresql"
+        - name: DCRX_KV_DATABASE_USER
+          valueFrom:
+            configMapKeyRef:
+              name: "{{ .Release.Name }}-env"
+              key: DCRX_KV_DATABASE_USER
+        - name: DCRX_KV_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "{{ .Release.Name }}-postgresql"
+              key: postgres-password
+        - name: DOCKER_REGISTRY_URI
+          valueFrom:
+            configMapKeyRef:
+              name: "{{ .Release.Name }}-env"
+              key: DOCKER_REGISTRY_URI
+        - name: DCRX_KV_DATABASE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: "{{ .Release.Name }}-env"
+              key: DCRX_KV_DATABASE_PORT
+        - name: DCRX_KV_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: dcrx-kv-secrets
+              key: DCRX_KV_SECRET_KEY
+      volumes:
+        - name: "{{ .Release.Name }}-storage"
+          emptyDir: {}

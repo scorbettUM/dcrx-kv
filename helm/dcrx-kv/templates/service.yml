@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Release.Name }}-dcrx-kv"
+  labels:
+    run: "{{ .Release.Name }}-dcrx-kv"
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      protocol: TCP
+      port: 2277
+      targetPort: 2277
+  selector:
+    app: "{{ .Release.Name }}-dcrx-kv"

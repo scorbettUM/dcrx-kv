@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-env"
+data:
+  # property-like keys; each key maps to a simple value
+  DCRX_BOOT_WAIT: "{{ .Value.env.DCRX_BOOT_WAIT }}"
+  DCRX_KV_MAX_MEMORY_PERCENT_USAGE: "{{ .Values.env.DCRX_KV_MAX_MEMORY_PERCENT_USAGE }}"
+  DCRX_KV_JOB_PRUNE_INTERVAL: "{{ .Values.env.DCRX_KV_JOB_PRUNE_INTERVAL }}"
+  DCRX_KV_JOB_MAX_AGE: "{{ .Values.env.DCRX_KV_JOB_MAX_AGE }}"
+  DCRX_KV_JOB_POOL_SIZE: "{{ .Values.env.DCRX_KV_JOB_POOL_SIZE }}"
+  DCRX_KV_JOB_WORKERS: "{{ .Values.env.DCRX_KV_JOB_WORKERS }}"
+  DCRX_KV_TOKEN_EXPIRATION: "{{ .Values.env.DCRX_KV_TOKEN_EXPIRATION }}"
+  DCRX_KV_DATABASE_TYPE: "{{ .Values.env.DCRX_KV_DATABASE_TYPE }}"
+  DCRX_KV_DATABASE_PORT: "{{ .Values.env.DCRX_KV_DATABASE_PORT }}"
+  DCRX_KV_DATABASE_USER: "{{ .Values.env.DCRX_KV_DATABASE_USER }}"
+  DOCKER_REGISTRY_URI: "{{ .Values.env.DOCKER_REGISTRY_URI }}"

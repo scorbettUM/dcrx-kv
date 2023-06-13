@@ -1,0 +1,14 @@
+dcrx
+fastapi[all]
+psutil
+python-jose[cryptography]
+passlib[bcrypt]
+aiomysql
+asyncpg
+aiosqlite
+sqlalchemy
+python-dotenv
+click
+uvicorn[standard]
+sqlalchemy-utils
+psycopg2-binary
