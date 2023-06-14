@@ -1,7 +1,7 @@
 from pydantic import BaseModel, StrictStr
 
 
-class BlobMetadataNotFoundException(BaseModel):
+class PathNotFoundException(BaseModel):
     namespace: StrictStr
     key: StrictStr
     message: StrictStr

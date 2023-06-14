@@ -3,7 +3,6 @@ import functools
 import os
 import psutil
 import time
-import traceback
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import UploadFile
@@ -18,7 +17,8 @@ from typing import Union, Optional
 from .connection import StorageConnection
 from .models import (
     Blob,
-    JobMetadata
+    JobMetadata,
+    PathNotFoundException
 )
 from .status import JobStatus
 
@@ -54,7 +54,7 @@ class Job:
             backup_type=blob.backup_type,
             encoding=blob.encoding,
             context=f'Job {str(job_id)} creating',
-            status=JobStatus.CREATED.value
+            status=JobStatus.CREATING.value
         )
 
         self.shutdown = False
@@ -67,14 +67,33 @@ class Job:
         )
     
     async def run(self, 
-        filesystem: MemoryError,
+        filesystem: MemoryFS,
         data: Optional[UploadFile]=None
-    ):
+    ) -> Union[Blob, PathNotFoundException]:
         
         self.filesystem = filesystem
+
+        path_exists = await self.loop.run_in_executor(
+            self._executor,
+            functools.partial(      
+                self.filesystem.exists,
+                self.path
+            )
+        )
+
+        if self.metadata.operation_type != "upload" and path_exists is False:
+            return PathNotFoundException(
+                namespace=self.metadata.namespace,
+                key=self.metadata.key,
+                message=f'Blob - {self.metadata.path} - not found.'
+            )
+
         
-        if data:
+        if self.metadata.operation_type == 'upload':
             result = await self.upload(data)
+
+        elif self.metadata.operation_type == "delete":
+            result = await self.delete()
             
         else:
             result = await self.download()
@@ -86,19 +105,6 @@ class Job:
     async def create(self) -> JobMetadata:
 
         try:
-            self.metadata = JobMetadata(
-                id=self.metadata.id,
-                key=self.metadata.key,
-                namespace=self.metadata.namespace,
-                filename=self.metadata.filename,
-                path=self.metadata.path,
-                content_type=self.metadata.content_type,
-                operation_type=self.metadata.operation_type,
-                backup_type=self.metadata.backup_type,
-                encoding=self.metadata.encoding,
-                context=f'Job {str(self.metadata.id)} created',
-                status=JobStatus.CREATING.value
-            )
 
             result = await self._connection.create([
                 self.metadata
@@ -148,12 +154,13 @@ class Job:
         await self._connection.update([
             self.metadata
         ], filters={
-            'id': self.metadata.id
+            'path': self.metadata.path
         })
 
         result: Union[bytes, None] = None
 
         try:
+            
             result = await self.loop.run_in_executor(
                 self._executor,
                 functools.partial(
@@ -179,7 +186,7 @@ class Job:
             await self._connection.update([
                 self.metadata
             ], filters={
-                'id': self.metadata.id
+                'path': self.metadata.path
             })
 
         except (
@@ -206,7 +213,7 @@ class Job:
             await self._connection.update([
                 self.metadata
             ], filters={
-                'id': self.metadata.id
+                 'path': self.metadata.path
             })
 
             return Blob(
@@ -225,7 +232,7 @@ class Job:
         await self._connection.update([
             self.metadata
         ], filters={
-            'id': self.metadata.id
+             'path': self.metadata.path
         })
 
         return Blob(
@@ -243,7 +250,7 @@ class Job:
     async def upload(
         self, 
         data: bytes
-    ):
+    ) -> Blob:
         
         self.metadata = JobMetadata(
             id=self.metadata.id,
@@ -262,7 +269,7 @@ class Job:
         await self._connection.update([
             self.metadata
         ], filters={
-            'id': self.metadata.id
+             'path': self.metadata.path
         })
 
         try:
@@ -310,7 +317,7 @@ class Job:
             await self._connection.update([
                 self.metadata
             ], filters={
-                'id': self.metadata.id
+                 'path': self.metadata.path
             })
 
         except (
@@ -337,7 +344,7 @@ class Job:
             await self._connection.update([
                 self.metadata
             ], filters={
-                'id': self.metadata.id
+                 'path': self.metadata.path
             })
 
             return Blob(
@@ -355,7 +362,7 @@ class Job:
         await self._connection.update([
             self.metadata
         ], filters={
-            'id': self.metadata.id
+             'path': self.metadata.path
         })
 
         return Blob(
@@ -369,7 +376,7 @@ class Job:
             backup_type=self.metadata.backup_type,
         )
     
-    async def delete(self):
+    async def delete(self) -> Blob:
         
         self.metadata = JobMetadata(
             id=self.metadata.id,
@@ -382,13 +389,13 @@ class Job:
             backup_type=self.metadata.backup_type,
             encoding=self.metadata.encoding,
             context=f'Job {str(self.metadata.id)} starting deletion',
-            status=JobStatus.READING.value
+            status=JobStatus.DELETING.value
         )
 
         await self._connection.update([
             self.metadata
         ], filters={
-            'id': self.metadata.id
+             'path': self.metadata.path
         })
 
         try:
@@ -418,7 +425,7 @@ class Job:
             await self._connection.update([
                 self.metadata
             ], filters={
-                'id': self.metadata.id
+                 'path': self.metadata.path
             })
 
         except (
@@ -445,7 +452,7 @@ class Job:
             await self._connection.update([
                 self.metadata
             ], filters={
-                'id': self.metadata.id
+                 'path': self.metadata.path
             })
 
             return Blob(
@@ -463,7 +470,7 @@ class Job:
         await self._connection.update([
             self.metadata
         ], filters={
-            'id': self.metadata.id
+             'path': self.metadata.path
         })
 
         return Blob(
@@ -495,7 +502,7 @@ class Job:
         await self._connection.update([
             self.metadata
         ], filters={
-            'id': self.metadata.id
+             'path': self.metadata.path
         })
     
     async def close(self):

@@ -21,13 +21,14 @@ from typing import (
 )
 from .models import (
     Blob,
-    BlobMetadataNotFoundException,
+    PathNotFoundException,
     JobMetadata,
     ServerLimitException
 )
 
 from .connection import StorageConnection
 from .job import Job
+from .status import JobStatus
 
 
 class JobQueue:
@@ -43,7 +44,6 @@ class JobQueue:
 
         self._connection = connection
         self._jobs: Dict[uuid.UUID, Job] = {}
-        self._job_metadata: Dict[str, JobMetadata] = {}
         self._active: Dict[uuid.UUID, asyncio.Task] = {}
 
         self.max_jobs = env.DCRX_KV_STORAGE_POOL_SIZE
@@ -203,7 +203,6 @@ class JobQueue:
         )
 
         self._jobs[job.metadata.id] = job
-        self._job_metadata[job.path] = job.metadata
 
         return job.metadata
     
@@ -218,31 +217,69 @@ class JobQueue:
             workers=self.max_job_workers
         )
 
+        result = await job.create()
+        if result.error:
+            return result
+
         return await job.run(self._filesystem)
+    
+    async def delete(
+        self,
+        blob: Blob
+    ) -> JobMetadata:
+        job = Job(
+            blob,
+            self._connection,
+            workers=self.max_job_workers
+        )
+
+        result = await job.create()
+        if result.error:
+            return result
+        
+        blob = await job.run(self._filesystem)
+
+        if isinstance(blob, PathNotFoundException):
+            return blob
+
+        elif blob.error:
+            return JobMetadata(
+                id=result.id,
+                namespace=result.namespace,
+                key=result.key,
+                path=result.path,
+                content_type=result.content_type,
+                operation_type=result.operation_type,
+                backup_type=result.backup_type,
+                encoding=result.encoding,
+                context=f"Job {str(result.id)} failed to delete",
+                status=JobStatus.FAILED.value,
+                error=blob.error
+            )
+        
+        return job.metadata
     
     async def get_job_metadata(
         self,
         namespace: str,
         key: str
-    ) -> Union[JobMetadata, BlobMetadataNotFoundException]:
+    ) -> Union[JobMetadata, PathNotFoundException]:
         path_key = os.path.join(namespace, key)
-        metadata = self._job_metadata.get(path_key)
-        if metadata is None:
 
-            metadata_set = await self._connection.select(
-                filters={
-                    'path': path_key
-                }
+        metadata_set = await self._connection.select(
+            filters={
+                'path': path_key
+            }
+        )
+
+        if metadata_set.data is None or len(metadata_set.data) < 1:
+            return PathNotFoundException(
+                namespace=namespace,
+                key=key,
+                message=f'Blob - {path_key} - not found.'
             )
-
-            if metadata_set.data is None or len(metadata_set.data) < 1:
-                return BlobMetadataNotFoundException(
-                    namespace=namespace,
-                    key=key,
-                    message=f'Blob - {path_key} - not found.'
-                )
-            
-            metadata = metadata_set.data.pop()
+        
+        metadata = metadata_set.data.pop()
 
         return JobMetadata(
             id=metadata.id,
@@ -264,7 +301,7 @@ class JobQueue:
         namespace: str,
         key: str,
         operation_type: str="list"
-    ) -> Union[Blob, BlobMetadataNotFoundException]:
+    ) -> Union[Blob, PathNotFoundException]:
         
         metadata = await self.get_job_metadata(
             namespace,
@@ -282,7 +319,7 @@ class JobQueue:
             backup_type=metadata.backup_type
         )
     
-    async def cancel(self, job_id: uuid.UUID) -> Union[Job, BlobMetadataNotFoundException]:
+    async def cancel(self, job_id: uuid.UUID) -> Union[Job, PathNotFoundException]:
 
         active_task = self._active.get(job_id)
         if active_task and active_task.done() is False:
@@ -290,15 +327,15 @@ class JobQueue:
 
         cancellable_states = [
             'CREATINNG',
-            'CREATED', 
             'WRITING',
-            'READING'
+            'READING',
+            'DELETING'
         ]
 
         cancelled_job = self._jobs.get(job_id)
 
         if cancelled_job is None:
-            return BlobMetadataNotFoundException(
+            return PathNotFoundException(
                 job_id=job_id,
                 message=f'Job - {job_id} - not found or is not active.'
             )
@@ -306,7 +343,7 @@ class JobQueue:
         job_is_cancellable = cancelled_job.metadata.status in cancellable_states
 
         if job_is_cancellable is False:
-            return BlobMetadataNotFoundException(
+            return PathNotFoundException(
                 job_id=job_id,
                 message=f'Job - {job_id} - not found or is not active.'
             )

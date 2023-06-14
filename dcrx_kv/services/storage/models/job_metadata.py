@@ -13,7 +13,12 @@ class JobMetadata(BaseModel):
     filename: StrictStr
     path: StrictStr
     content_type: StrictStr='application/octet-stream'
-    operation_type: Literal["upload", "download", "list"]="list"
+    operation_type: Literal[
+        "upload", 
+        "download", 
+        "list", 
+        "delete"
+    ]="list"
     backup_type: Literal["disk", "aws", "gcs", "azure"]='disk'
     encoding: StrictStr='utf-8'
     context: StrictStr
