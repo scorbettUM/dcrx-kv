@@ -16,13 +16,13 @@ from typing import (
     TypeVar,
     Generic
 )
-from .blob_mysql_table import BlobsMySQLTable
-from .blob_postgres_table import BlobsPostgresMySQLTable
-from .blob_sqllite_table import BlobSQLiteTable
+from .storage_mysql_table import StorageMySQLTable
+from .storage_postgres_table import StoragePostgresMySQLTable
+from .storage_sqllite_table import StorageSQLiteTable
 
 M = TypeVar('M', bound=BaseModel)
 
-class BlobTable(Generic[M]):
+class StorageTable(Generic[M]):
 
     def __init__(
         self,
@@ -34,24 +34,24 @@ class BlobTable(Generic[M]):
             Callable[
                 [str],
                 Union[
-                    BlobsMySQLTable,
-                    BlobsPostgresMySQLTable,
-                    BlobSQLiteTable
+                    StorageMySQLTable,
+                    StoragePostgresMySQLTable,
+                    StorageSQLiteTable
                 ]
             ]
         ] = {
-            'mysql': lambda table_name: BlobsMySQLTable(table_name),
-            'postgres': lambda table_name: BlobsPostgresMySQLTable(table_name),
-            'sqlite': lambda table_name: BlobSQLiteTable(table_name)
+            'mysql': lambda table_name: StorageMySQLTable(table_name),
+            'postgres': lambda table_name: StoragePostgresMySQLTable(table_name),
+            'sqlite': lambda table_name: StorageSQLiteTable(table_name)
         }
 
         self.selected: Union[
-            BlobsMySQLTable,
-            BlobsPostgresMySQLTable,
-            BlobSQLiteTable
+            StorageMySQLTable,
+            StoragePostgresMySQLTable,
+            StorageSQLiteTable
         ] = self._table_types.get(
             database_type,
-            BlobsMySQLTable
+            StorageMySQLTable
         )(users_table_name)
 
     def select(
@@ -73,14 +73,15 @@ class BlobTable(Generic[M]):
     
     def insert(
         self,
-        users: List[M]
+        blobs: List[M]
     ) -> List[Insert]:
+        
         return [
             self.selected.table.insert().values({
                 name: self.selected.types_map.get(
                     name
-                )(value) for name, value in user.dict().items()
-            }) for user in users
+                )(value) for name, value in blob.dict().items()
+            }) for blob in blobs
         ]
     
     def update(

@@ -29,6 +29,6 @@ RUN pip install --upgrade pip \
 
 WORKDIR /dcrx_kv/
 
-EXPOSE 2277
+EXPOSE 2278
 
 CMD ["/start.sh"]

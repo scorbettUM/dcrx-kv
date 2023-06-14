@@ -8,11 +8,11 @@ from typing import (
     Dict,
     Any
 )
-from .models import Blob
-from .table import BlobTable
+from .models import JobMetadata
+from .table import StorageTable
 
 
-class BlobConnection(DatabaseConnection[Blob]):
+class StorageConnection(DatabaseConnection[JobMetadata]):
 
     def __init__(self, env: Env) -> None:
         super().__init__(
@@ -26,8 +26,8 @@ class BlobConnection(DatabaseConnection[Blob]):
             )
         )
 
-        self.table: BlobTable[Blob] = BlobTable(
-            'users',
+        self.table: StorageTable[JobMetadata] = StorageTable(
+            'blobs',
             database_type=self.config.database_type
         )
 
@@ -50,20 +50,20 @@ class BlobConnection(DatabaseConnection[Blob]):
 
     async def create(
         self, 
-        users: List[Blob]
+        blobs: List[JobMetadata]
     ):
        return await self.insert_or_update(
-           self.table.insert(users)
+           self.table.insert(blobs)
        )
     
     async def update(
         self, 
-        users: List[Blob],
+        blobs: List[JobMetadata],
         filters: Dict[str, Any]={}
     ):
         return await self.insert_or_update(
             self.table.update(
-                users,
+                blobs,
                 filters={
                     name: self.table.selected.types_map.get(
                         name

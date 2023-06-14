@@ -14,4 +14,4 @@ spec:
           service:
             name: "{{ .Release.Name }}-dcrx-kv"
             port:
-              number: 2277
+              number: 2278

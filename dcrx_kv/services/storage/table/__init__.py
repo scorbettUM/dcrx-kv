@@ -1,1 +1,1 @@
-from .blob_table import BlobTable
+from .storage_table import StorageTable

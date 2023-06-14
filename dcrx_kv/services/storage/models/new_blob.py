@@ -2,9 +2,8 @@ from pydantic import (
     BaseModel,
     StrictStr
 )
+from typing import Literal
 
 
 class NewBlob(BaseModel):
-    key: StrictStr
-    storage_resource_type: StrictStr
-    storage_resource_group: StrictStr
+    data: StrictStr

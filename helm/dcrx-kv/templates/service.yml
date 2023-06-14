@@ -9,7 +9,7 @@ spec:
   ports:
     - name: http
       protocol: TCP
-      port: 2277
-      targetPort: 2277
+      port: 2278
+      targetPort: 2278
   selector:
     app: "{{ .Release.Name }}-dcrx-kv"

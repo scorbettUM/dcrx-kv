@@ -18,7 +18,7 @@ def server():
 )
 @click.option(
     '--port',
-    default=2277,
+    default=2278,
     help='Port to run the DCRX server on.'
 )
 @click.option(

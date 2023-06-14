@@ -33,7 +33,7 @@ class AuthorizationSessionManager:
 
     def __init__(self, env: Env) -> None:
 
-        self.pool_size = env.DCRX_KV_BLOB_WORKERS
+        self.pool_size = env.DCRX_KV_STORAGE_WORKERS
         self.context = CryptContext(
             schemes=["bcrypt"], 
             deprecated="auto"

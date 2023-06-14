@@ -165,10 +165,10 @@ class DatabaseConnection(Generic[T]):
                     await connection.rollback()
 
                 await connection.commit()
-        
+
         return DatabaseTransactionResult(
             message='Database transaction failed',
-            last_error=last_error
+            error=last_error
         )
     
     async def insert_or_update(
@@ -199,7 +199,7 @@ class DatabaseConnection(Generic[T]):
         
         return DatabaseTransactionResult(
             message='Database transaction failed',
-            last_error=last_error
+            error=last_error
         )
 
 
@@ -230,7 +230,7 @@ class DatabaseConnection(Generic[T]):
         
         return DatabaseTransactionResult(
             message='Database transaction failed',
-            last_error=last_error
+            error=last_error
         )
 
     async def drop_table(
@@ -265,7 +265,7 @@ class DatabaseConnection(Generic[T]):
         
         return DatabaseTransactionResult(
             message='Database transaction failed',
-            last_error=last_error
+            error=last_error
         )
     
     async def close(self):
@@ -287,5 +287,5 @@ class DatabaseConnection(Generic[T]):
 
         return DatabaseTransactionResult(
             message='Database transaction failed',
-            last_error=last_error
+            error=last_error
         )

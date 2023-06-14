@@ -12,3 +12,8 @@ click
 uvicorn[standard]
 sqlalchemy-utils
 psycopg2-binary
+boto3
+google-cloud-storage
+azure-storage-blob
+fs
+python-multipart

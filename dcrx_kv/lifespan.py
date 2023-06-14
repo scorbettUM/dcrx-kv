@@ -13,6 +13,11 @@ from dcrx_kv.services.monitoring.context import (
     MemoryMonitor,
     MonitoringServiceContext
 )
+from dcrx_kv.services.storage.context import (
+    JobQueue,
+    StorageConnection,
+    StorageServiceContext
+)
 
 from dcrx_kv.context.manager import context
 from .env import load_env, Env
@@ -35,6 +40,16 @@ async def lifespan(app: FastAPI):
         memory=MemoryMonitor()
     )
 
+    storage_service_connection = StorageConnection(env)
+    storage_service_context = StorageServiceContext(
+        env=env,
+        connection=storage_service_connection,
+        queue=JobQueue(
+            env,
+            storage_service_connection
+        )
+    )
+
     users_service_context = UsersServiceContext(
         env=env,
         connection=UsersConnection(env)
@@ -43,6 +58,7 @@ async def lifespan(app: FastAPI):
     await context.initialize([
         auth_service_context,
         monitoring_service_context,
+        storage_service_context,
         users_service_context
     ])
 

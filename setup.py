@@ -56,7 +56,9 @@ setup(
         'passlib[bcrypt]',
         'python-dotenv',
         'click',
-        'uvicorn[standard]'
+        'uvicorn[standard]',
+        'fs',
+        'python-multipart'
     ],
     extras_requires={
         'all': [
@@ -65,7 +67,10 @@ setup(
             'sqlalchemy',
             'aiosqlite',
             'sqlalchemy-utils',
-            'psycopg2-binary'
+            'psycopg2-binary',
+            'boto3',
+            'google-cloud-storage',
+            'azure-storage-blob'
         ],
         's3': [
             'boto3'
